@@ -1,0 +1,22 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#00E091"/>
+      <stop offset="100%" stop-color="#0A7C66"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#0b0d10"/>
+  <!-- 8 条“火焰感”弧带，致敬 GPT 的旋纹但更锐一点 -->
+  <g fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+    <path d="M12 34c8-14 20-20 40-16" />
+    <path d="M10 28c10-12 26-18 42-12" />
+    <path d="M14 40c8-10 22-14 36-10" />
+    <path d="M16 46c10-8 22-10 30-8" />
+    <path d="M22 50c8-6 16-6 22-6" />
+    <path d="M26 54c6-4 12-4 16-4" />
+    <path d="M34 56c4-2 8-2 10-2" />
+    <path d="M8 22c12-12 28-18 46-14" />
+  </g>
+  <!-- 中心火焰形 -->
+  <path fill="url(#g)" d="M32 22c4 6-2 8-2 12s4 6 2 10c-6-2-10-6-10-12 0-6 6-8 10-10z" opacity="0.9"/>
+</svg>

@@ -1,0 +1,13 @@
+﻿.venv/
+__pycache__/
+*.pyc
+exports/
+logs/
+build/
+*.zip
+*.png
+*.srt
+*.json
+tmp_*.csv
+.DS_Store
+tools/keygen/private_key.pem

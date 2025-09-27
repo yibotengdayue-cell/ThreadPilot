@@ -1,0 +1,160 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <title>ThreadPilot · 控制台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="icon" href="/static/logo.svg"/>
+  <link rel="stylesheet" href="/static/main.css"/>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="/static/logo.svg" alt="ThreadPilot" width="24" height="24" style="border-radius:6px"/>
+        <div>
+          <div class="t">ThreadPilot</div>
+          <div class="badge">Local · 127.0.0.1</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="/" class="active">📊 控制台</a>
+        <a href="/docs" target="_blank">🧭 API 文档</a>
+        <a href="#" onclick="alert('即将开放：插件/工作流/素材库')">🧩 插件</a>
+        <a href="#" onclick="alert('即将开放：设置')">⚙️ 设置</a>
+      </nav>
+      <div style="margin-top:auto" class="badge">v0.1.0</div>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div>状态：<span class="ok">运行中</span></div>
+        <a class="badge" href="/docs" target="_blank">Swagger</a>
+      </header>
+
+      <div class="content" id="content">
+        <div class="card">
+          <h2 style="margin:0 0 6px">ThreadPilot · 对话式工作台</h2>
+          <div class="badge">像 GPT 一样输入描述；可附加 CSV 获得数据摘要</div>
+        </div>
+
+        {% if blocks %}
+          {% for b in blocks %}
+            <div class="card bubble">
+              <div style="margin-bottom:6px"><b>{{ b.title }}</b></div>
+              {% if b.text %}<div>{{ b.text }}</div>{% endif %}
+              {% if b.code %}<pre class="code">{{ b.code }}</pre>{% endif %}
+            </div>
+          {% endfor %}
+        {% elif result %}
+          <div class="card bubble">
+            {% if filename %}<div style="margin-bottom:6px"><b>{{ filename }}</b></div>{% endif %}
+            <pre class="code">{{ result }}</pre>
+          </div>
+        {% else %}
+          <div class="card bubble">你好，我是 <b>ThreadPilot</b>。在下方输入你的需求，或附加一个 .csv 尝试分析。</div>
+        {% endif %}
+      </div>
+
+      <footer class="composer">
+        <form class="form" action="/compose" method="post" enctype="multipart/form-data">
+          <input type="file" name="file" accept=".csv" title="可选：附加CSV"/>
+          <input type="text" name="message" placeholder="像在 GPT 里一样输入你的需求..." />
+          <button type="submit">发送</button>
+        </form>
+      </footer>
+    </section>
+  </div>
+</body>
+</html>
+<section class="card" style="margin-top:16px;">
+  <div class="card-title">🗂 最近导出</div>
+  <div id="recent-list" class="card-body">（加载中…）</div>
+</section>
+
+<script>
+(async function(){
+  try{
+    const res = await fetch("/api/recent");
+    const data = await res.json();
+    const box = document.getElementById("recent-list");
+    if(!data.items || data.items.length===0){
+      box.textContent = "暂无导出记录";
+      return;
+    }
+    const ul = document.createElement("ul");
+    ul.style.listStyle = "none";
+    ul.style.paddingLeft = "0";
+
+    for(const it of data.items){
+      const li = document.createElement("li");
+      li.style.margin = "8px 0";
+      const title = document.createElement("div");
+      title.innerHTML = `<strong>${it.base}</strong> <span style="opacity:.6"> · ${it.mtime}</span>`;
+      li.appendChild(title);
+
+      const links = document.createElement("div");
+      for(const [ext, url] of Object.entries(it.links)){
+        const a = document.createElement("a");
+        a.href = url;
+        a.textContent = ext.toUpperCase();
+        a.style.marginRight = "8px";
+        a.target = "_blank";
+        links.appendChild(a);
+      }
+      li.appendChild(links);
+      ul.appendChild(li);
+    }
+    box.innerHTML = "";
+    box.appendChild(ul);
+  }catch(e){
+    document.getElementById("recent-list").textContent = "加载失败";
+    console.error(e);
+  }
+})();
+</script>
+<style>
+.cmd-palette{position:relative;margin-top:8px}
+.cmd-panel{position:absolute;z-index:5;left:0;right:0;top:0;background:#0f1111;border:1px solid #262a26;border-radius:10px;padding:8px;display:none}
+.cmd-panel .item{padding:6px 8px;border-radius:6px;cursor:pointer}
+.cmd-panel .item:hover{background:#1a1d1a}
+.cmd-panel .cmd{font-weight:600;color:#aef1b5}
+.cmd-panel .desc{opacity:.7;font-size:12px}
+</style>
+<div class="cmd-palette">
+  <div id="cmd-panel" class="cmd-panel"></div>
+</div>
+<script>
+const COMMANDS = [
+ {cmd:"/scriptwf <topic> style=retro bpm=100 dur=18 lang=en+zh variants=3", desc:"生成分镜/节奏/字幕/封面；支持多版本"},
+ {cmd:"/match root=D:\\素材 <topic>", desc:"扫描本地素材目录，导出候选素材清单 JSON"},
+ {cmd:"/csvsum", desc:"上传CSV后，返回数据概览（在下方文件框附加CSV）"},
+ {cmd:"/help", desc:"显示命令说明"}
+];
+(function(){
+  const panel = document.getElementById('cmd-panel');
+  const ta = document.querySelector('textarea[name="text"], #text, textarea') || document.querySelector('input[name="text"]');
+  if(!ta || !panel) return;
+
+  function render(items){
+    panel.innerHTML = "";
+    items.forEach(it=>{
+      const div=document.createElement('div'); div.className='item';
+      div.innerHTML = `<div class="cmd">${it.cmd}</div><div class="desc">${it.desc}</div>`;
+      div.onclick=()=>{ ta.value = it.cmd; panel.style.display='none'; ta.focus(); };
+      panel.appendChild(div);
+    });
+  }
+  render(COMMANDS);
+
+  ta.addEventListener('input', ()=>{
+    const v = ta.value.trim();
+    if(v.startsWith('/')){
+      panel.style.display='block';
+    }else{
+      panel.style.display='none';
+    }
+  });
+  ta.addEventListener('blur', ()=> setTimeout(()=> panel.style.display='none', 200));
+})();
+</script>
